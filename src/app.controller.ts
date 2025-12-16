@@ -8,6 +8,9 @@ export class AppController {
   @Get()
   @Render('index')
   getHello() {
-    // return "/index.ejs"
+    const message = this.appService.getHello();
+    return {
+      message: message
+    }
   }
 }
