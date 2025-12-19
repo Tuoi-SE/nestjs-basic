@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { LocalAuthGuard } from './auth/local-auth.guard';
 import { AuthService } from './auth/auth.service';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { Public } from './decorator/customize';
 
 @Controller()
 export class AppController {
@@ -12,6 +13,7 @@ export class AppController {
     private readonly configService: ConfigService,
     private authService: AuthService) { }
 
+  @Public()
   @UseGuards(LocalAuthGuard)
   @Post('/login')
   handleLogin(@Request() req) {
