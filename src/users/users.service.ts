@@ -1,5 +1,5 @@
-import { ConflictException, Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
+import { BadGatewayException, ConflictException, Injectable } from '@nestjs/common';
+import { CreateUserDto, RegisterUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from './schemas/user.schema';
@@ -22,33 +22,50 @@ export class UsersService {
     return compareSync(password, hash);
   }
 
+  async register(user: RegisterUserDto) {
+    const { name, email, password, age, gender, address } = user;
+    //add logic check email
+    const isExist = await this.userModel.findOne({ email });
+    if (isExist) {
+      throw new BadGatewayException("Email đã tồn tại");
+    }
+    const hashPassword = this.getHashPassword(password);
+    let newRegister = await this.userModel.create({
+      name,
+      email,
+      password: hashPassword,
+      age,
+      gender,
+      address,
+      role: "USER"
+    })
+    return newRegister;
+  }
+
   async create(createUserDto: CreateUserDto, user: IUser) {
-    const { email, password } = createUserDto;
-    const checkEmail = await this.userModel.findOne({ email }).exec();
-    if (checkEmail) {
-      throw new ConflictException('Email already exists');
+    const { name, email, password, age, gender, address, role, company } = createUserDto;
+    const isExist = await this.userModel.findOne({ email });
+    if (isExist) {
+      throw new BadGatewayException("Email đã tồn tại");
     }
     const hashPassword = this.getHashPassword(password)
     let newUser = await this.userModel.create({
-      name: createUserDto.name,
-      email: createUserDto.email,
+      name,
+      email,
       password: hashPassword,
-      age: createUserDto.age,
-      gender: createUserDto.gender,
-      address: createUserDto.address,
-      role: createUserDto.role,
-      company: {
-        _id: createUserDto.company._id,
-        name: createUserDto.company.name,
-      },
+      age,
+      gender,
+      address,
+      role,
+      company,
       createdBy: {
         _id: user._id,
         email: user.email
       }
     })
     return {
-      _id: newUser._id,
-      createdAt: newUser['createdAt']
+      _id: newUser?._id,
+      createdAt: newUser?.createdAt
     };
   }
 
@@ -67,6 +84,7 @@ export class UsersService {
       .skip(offset)
       .limit(defaultLimit)
       .sort(sort as any)
+      .select("-password")
       .populate(population)
       .exec();
 
@@ -85,7 +103,7 @@ export class UsersService {
     try {
       return await this.userModel.findById({
         _id: id
-      })
+      }).select("-password");
     } catch (error) {
       return "Not found user"
     }

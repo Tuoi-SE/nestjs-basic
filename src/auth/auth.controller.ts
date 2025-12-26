@@ -21,10 +21,4 @@ export class AuthController {
     handleRegister(@Body() registerUserDto: RegisterUserDto) {
         return this.authService.register(registerUserDto);
     }
-
-    // @UseGuards(JwtAuthGuard)
-    @Get('/profile')
-    getProfile(@Request() req) {
-        return req.user;
-    }
 }
